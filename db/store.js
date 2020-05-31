@@ -1,10 +1,11 @@
 //Dependencies:
-
 const fs = require("fs");
 const path = require("path");
 const util = require("util");
 const express = require("express");
 const app = express();
+
+const { v1: uuidv1 } = require('uuid');
 
 //Create Promises:
 
@@ -22,36 +23,38 @@ class Store {
         return writeFileAsync(path.join(__dirname, "db.json"), JSON.stringify(note));
     };
     getNotes() {
-        return this.read().then(notes => {
-            let parsedNotes = JSON.parse(notes);
-            console.log(parsedNotes);
+        return this.read().then((notes) => {
+            let parsedNotes;
+
+            try {
+                parsedNotes = [].concat(JSON.parse(notes));
+            } catch (err) {
+                parsedNotes = [];
+            }
+
             return parsedNotes;
         });
-    };
-    addNotes(newNote) {
-        console.log(newNote);
-        return this.getNotes().then(notes => {
-            const newNoteList = [...notes, newNote];
-            console.log(newNoteList);
-            return this.write(newNoteList);
-        })
-    };
-    deleteNotes(title) {
-        return this.getNotes()
-            .then(notes => {
-                console.log("This notes says " + title);
-                for (var i = 0; i < notes.length; i++) {
-                    if (notes[i].title === title) {
-                        notes.splice(i, 1);
-                        console.log(notes);
-                        break;
-                    }
-                }
-                this.write(notes);
-            })
     }
-};
+    addNote(note) {
+        const { title, text } = note;
 
-const store = new Store();
+        if (!title || !text) {
+            throw new Error("Note 'title' and 'text' cannot be blank");
+        }
 
-module.exports = store;
+        const newNote = { title, text, id: uuidv1() };
+
+        return this.getNotes()
+            .then((notes) => [...notes, newNote])
+            .then((updatedNotes) => this.write(updatedNotes))
+            .then(() => newNote);
+    }
+
+    removeNote(id) {
+        return this.getNotes()
+            .then((notes) => notes.filter((note) => note.id !== id))
+            .then((filteredNotes) => this.write(filteredNotes));
+    }
+}
+
+module.exports = new Store();

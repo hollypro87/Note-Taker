@@ -28,5 +28,30 @@ class Store {
             return parsedNotes;
         });
     };
+    addNotes(newNote) {
+        console.log(newNote);
+        return this.getNotes().then(notes => {
+            const newNoteList = [...notes, newNote];
+            console.log(newNoteList);
+            return this.write(newNoteList);
+        })
+    };
+    deleteNotes(title) {
+        return this.getNotes()
+            .then(notes => {
+                console.log("This notes says " + title);
+                for (var i = 0; i < notes.length; i++) {
+                    if (notes[i].title === title) {
+                        notes.splice(i, 1);
+                        console.log(notes);
+                        break;
+                    }
+                }
+                this.write(notes);
+            })
+    }
+};
 
-}
+const store = new Store();
+
+module.exports = store;
